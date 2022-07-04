@@ -33,10 +33,11 @@ api = Api(app)
 app.add_url_rule("/", view_func= home)
 api.add_resource(Category, "/categories/<string:reqparam>")
 api.add_resource(Products, "/products/<string:reqparam>")
-api.add_resource(Prices, "/prices")
-api.add_resource(Orders,"/orders")
+api.add_resource(Prices, "/prices/<string:reqparam>")
+api.add_resource(Orders,"/orders/<string:reqparam>")
 api.add_resource(Customers, "/customers/<string:reqparam>")
 api.add_resource(Destinations, "/destinations/<string:reqparam>")
+
 
 
 if __name__ == "__main__":

@@ -32,11 +32,35 @@ class Prices(Resource):
         if self.db:
             self.db.close()
         
-    def get(self):
-        response = self.get_prices()
+    def get(self,reqparam):
+        message = request.args.to_dict()
+        response = self.router(reqparam, message)
         return response
 
-    def get_prices(self):
+    def post(self,reqparam):
+        price_data = request.get_json()
+        self.log.info("Received price post data, {}".format(price_data))
+        response = self.router(reqparam, price_data)
+        return response
+    
+    def router(self, reqparam,message):
+        if reqparam == "get_prices":
+            response = self.get_prices(message)
+            return response
+        
+        elif reqparam == "add_prices":
+            response = self.add_prices(message)
+            return response
+        
+        elif reqparam == "get_price_details":
+            response = self.get_price_details(message)
+            return response
+        
+        else:
+            response = "Unknown route, {}".format(reqparam)
+            return response
+
+    def get_prices(self,message):
         self.log.info("Fetching prices ....")
         try:
             select_query = "select price_id, buying_price, selling_price from prices"
@@ -49,20 +73,39 @@ class Prices(Resource):
             return prices
 
         except Exception as e:
-            self.log.error("Could not fetch prices due to error: {}".format(e))            
+            self.log.error("Could not fetch prices due to error: {}".format(e))      
+            return "Could not fetch prices due to error: {}".format(e)      
 
-    
-    def post(self):
-        price_data = request.get_json()
-        self.log.info("Received price post data, {}".format(price_data))
-        response = self.add_prices(price_data)
-        return response
-    
+    def get_price_details(self, id):
+        self.log.info("Fetching price details for id: {}",id)
+        try:
+            select_query = "select * from prices where price_id= :price_id"
+            data ={
+                "price_id":id.get("price_id")
+            }
+
+            resp = self.connection.execute(sql_text(select_query),data).fetchone()
+            resp_dict = dict(resp)
+            temp_resp = json.dumps(resp_dict, indent=4, sort_keys=True, default=str)
+            result = json.loads(temp_resp)
+            self.log.info("The result is, {}".format(result))
+            return result
+        
+        except Exception as e:
+            self.log.error("Could not fetch price details due to error: {}".format(e))
+            return "Could not fetch price details due to error: {}".format(e)
+
+
     def add_prices(self, price_data):
         self.log.info("Adding price data,{}", format(price_data))
         try:
             insert_query = "insert into prices(buying_price,selling_price) values(:buying_price,:selling_price)"
-            resp = self.connection.execute(sql_text(insert_query), price_data)
+            for line in price_data:
+                data = {
+                    "buying_price":line.get("buying_price"),
+                    "selling_price":line.get("selling_price")
+                }
+            resp = self.connection.execute(sql_text(insert_query), data)
             self.log.info("The price add response is, {}".format(resp))
             return "Successfully added"
 

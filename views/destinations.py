@@ -33,11 +33,36 @@ class Destinations(Resource):
         if self.db:
             self.db.close()
         
-    def get(self):
-        response = self.get_destinations()
+    def get(self,reqparam):
+        message = request.args.to_dict()
+        response = self.router(reqparam,message)
         return response
 
-    def get_destinations(self):
+    def post(self,reqparam):
+        dest_data = request.get_json()
+        self.log.info("Received destinations post request,{}", dest_data)
+        response = self.router(reqparam,dest_data)
+        return response
+    
+    def router(self, reqparam, message):
+        if reqparam == "get_destinations":
+            response = self.get_destinations(message)
+            return response
+
+        elif reqparam == "add_destination":
+            response = self.add_destination(message)
+            return response
+        
+        elif reqparam == "get_destination_details":
+            response = self.get_destination_details(message)
+            return response
+        
+        else:
+            response = "Unkown route, {}".format(reqparam)
+            return response
+        
+
+    def get_destinations(self,message):
         self.log.info("Fetching destinations ....")
         try:
             select_query = "select * from destinations"
@@ -52,17 +77,20 @@ class Destinations(Resource):
             self.log.error("Could not fetch destinations due to error: {}".format(e))
 
     
-    def post(self):
-        dest_data = request.get_json()
-        self.log.info("Received destinations post request,{}", dest_data)
-        response = self.add_destinations(dest_data)
-        return response
 
-    def add_destinations(self, dest_data):
+
+    def add_destination(self, dest_data):
         self.log.info("Adding destination data, {}".format(dest_data))
         try:
             insert_query = "insert into destinations(destination_name,delivery_charge) values(:destination_name,:delivery_charge)"
-            resp = self.connection.execute(sql_text(insert_query), dest_data)
+            for line in dest_data:
+
+                data = {
+                    "destination_name":line.get("destination_name"),
+                    "delivery_charge":line.get("delivery_charge")
+                }
+            
+            resp = self.connection.execute(sql_text(insert_query), data)
             self.log.info("The resp is {}".format(resp))
             return "Successfully added"
         
@@ -70,3 +98,21 @@ class Destinations(Resource):
             self.log.error("Could not insert destination information due to error, {}".format(e))
             return "Could not insert destination information due to error, {}".format(e)
 
+
+    def get_destination_details(self,id):
+        self.log.info("Fetching destination details for id {}".format(id))
+        try:
+            select_query = "select * from destinations where destination_id = :destination_id"
+            data = {
+                "destination_id":id.get("destination_id")
+
+            }
+            resp = self.connection.execute(sql_text(select_query),data).fetchone()
+            temp_res= dict(resp)
+            result = json.loads(json.dumps(temp_res, indent =4, sort_keys=True, default =str))
+            self.log.info("The result is {}".format(result))
+            return result
+        
+        except Exception as e:
+            self.log.error("Could not fetch destination details due to error: {}".format(e))
+            return "Could not fetch destination details due to error: {}".format(e)
