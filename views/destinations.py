@@ -57,6 +57,10 @@ class Destinations(Resource):
             response = self.get_destination_details(message)
             return response
         
+        elif reqparam == "get_customer_destination_details":
+            response = self.get_customer_destinations(message)
+            return response
+
         else:
             response = "Unkown route, {}".format(reqparam)
             return response
@@ -65,7 +69,7 @@ class Destinations(Resource):
     def get_destinations(self,message):
         self.log.info("Fetching destinations ....")
         try:
-            select_query = "select * from destinations"
+            select_query = "select BIN_TO_UUID(destination_id) destination_id, destination_name, delivery_charge from destinations"
             result = self.connection.execute(sql_text(select_query)).fetchall()
             destinations = [dict(row) for row in result]
             temp_dest = json.dumps(destinations, indent=4, sort_keys=True, default=str)
@@ -76,7 +80,19 @@ class Destinations(Resource):
         except Exception as e:
             self.log.error("Could not fetch destinations due to error: {}".format(e))
 
-    
+    def get_customer_destinations(self,message):
+        self.log.info("Fetching customer destinations ....")
+        try:
+            select_query = "select BIN_TO_UUID(customer_destination_id) customer_destination_id, BIN_TO_UUID(customer_id) customer_id, BIN_TO_UUID(destination_id) destination_id, destination_details from customer_destinations"
+            result = self.connection.execute(sql_text(select_query)).fetchall()
+            destinations = [dict(row) for row in result]
+            temp_dest = json.dumps(destinations, indent=4, sort_keys=True, default=str)
+            destinations = json.loads(temp_dest)
+            self.log.info("customer destinations are: {}".format(destinations))
+            return destinations
+
+        except Exception as e:
+            self.log.error("Could not fetch customer destinations due to error: {}".format(e))
 
 
     def add_destination(self, dest_data):

@@ -63,7 +63,7 @@ class Prices(Resource):
     def get_prices(self,message):
         self.log.info("Fetching prices ....")
         try:
-            select_query = "select price_id, buying_price, selling_price from prices"
+            select_query = "select BIN_TO_UUID(price_id) price_id, buying_price, selling_price from prices"
             result = self.connection.execute(sql_text(select_query)).fetchall()
             prices = [dict(row) for row in result]
             temp_price = json.dumps(prices, indent=4, sort_keys=True, default=str)

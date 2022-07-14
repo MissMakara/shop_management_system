@@ -91,13 +91,14 @@ class Customers(Resource):
     def get_customers(self, message):
         self.log.info("Fetching customers ....")
         try:
-            select_query = "select customer_id, contact, first_name, last_name, destination_id from customers"
+            select_query = "select BIN_TO_UUID(customer_id) customer_id, contact, first_name, last_name from customers order by 1"
             result = self.connection.execute(sql_text(select_query)).fetchall()
+            self.log.info("customers are: {}".format(result))
             customers = [dict(row) for row in result]
-            temp_customers = json.dumps(customers, indent=4, sort_keys=True, default=True)
-            customers = json.loads(temp_customers)
-            self.log.info("customers are: {}".format(customers))
-            return customers
+            temp_customers = json.dumps(customers, indent=4, sort_keys=True, default=str)
+            final_customers = json.loads(temp_customers)
+            self.log.info("customers are: {}".format(final_customers))
+            return final_customers
 
         except Exception as e:
             self.log.error("Could not fetch customers due to error: {}".format(e))
@@ -106,7 +107,7 @@ class Customers(Resource):
     def get_customer_details(self, id):
         self.log.info("Fetching customer details for customer id {}".format(id))
         try:
-            select_query = "select customer_id, contact, first_name, last_name, destination_id from customers where customer_id = :customer_id"
+            select_query = "select BIN_TO_UUID(customer_id), contact, first_name, last_name, destination_id from customers where customer_id = :customer_id"
             data = {
                 "customer_id":id.get("customer_id")
             }

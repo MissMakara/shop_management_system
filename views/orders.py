@@ -62,7 +62,23 @@ class Orders(Resource):
     def get_orders(self,message):
         self.log.info("getting orders...")
         try:
-            select_query = "select * from orders order by order_id"
+            select_query = "select BIN_TO_UUID(order_id) order_id from orders  order by order_id"
+            result = self.connection.execute(sql_text(select_query)).fetchall()
+            orders = [dict(row) for row in result]
+            temp_orders = json.dumps(orders, indent=4, sort_keys=True, default=str)
+            orders = json.loads(temp_orders)
+            
+            self.log.info("Orders are: {}".format(orders))
+            return orders
+
+        except Exception as e:
+            self.log.error("Unable to fetch orders due to: {}".format(e))
+            return None
+    
+    def get_order_product_details(self,message):
+        self.log.info("getting orders...")
+        try:
+            select_query = "select BIN_TO_UUID(order_product_id) order_product_id from order_product order by order_id"
             result = self.connection.execute(sql_text(select_query)).fetchall()
             orders = [dict(row) for row in result]
             temp_orders = json.dumps(orders, indent=4, sort_keys=True, default=str)

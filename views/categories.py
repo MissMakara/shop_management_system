@@ -1,3 +1,5 @@
+import json
+
 from email import message
 from flask import current_app,request, make_response,render_template
 from flask_restful import Resource
@@ -65,11 +67,13 @@ class Category(Resource):
     def get_categories(self, message):
         self.log.info("received request to list categories")
         try:
-            select_query = "select category_id, category_name from categories order by 1"
+            select_query = "select BIN_TO_UUID(category_id) category_id, category_name,BIN_TO_UUID(parent_id) parent_id from categories order by 1"
             result = self.connection.execute(sql_text(select_query)).fetchall()
             categories = [dict(row) for row in result]
-            self.log.info("final categories are: {}".format(categories))
-            return categories
+            cat_temp = json.dumps(categories, indent=4, sort_keys=True, default=str)
+            cat = json.loads(cat_temp)
+            self.log.info("final categories are: {}".format(cat))
+            return cat
 
         except Exception as e:
             self.log.error("Unable to get categories due to: {}".format(e))
