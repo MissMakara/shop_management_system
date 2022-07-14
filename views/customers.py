@@ -1,11 +1,11 @@
 import json
 
-from flask import request, current_app, make_response, render_template
+from classes.pearl import Pearl
+from flask import current_app, make_response, render_template, request
 from flask_restful import Resource
 from sqlalchemy.sql import text as sql_text
-
 from utils.utils import ConfigsParser as config
-from classes.pearl import Pearl
+
 
 class Customers(Resource):
     def __init__(self):
@@ -67,7 +67,6 @@ class Customers(Resource):
         try:
             insert_query = "insert into customers(contact, first_name,last_name,destination_id) values(:contact,:first_name,:last_name,:destination_id)"
 
-            #resp = self.connection.execute(sql_text(insert_query), customer_data)
             for line in customer_data:
                 data = {
                     "contact":line.get("contact"),
@@ -107,11 +106,17 @@ class Customers(Resource):
     def get_customer_details(self, id):
         self.log.info("Fetching customer details for customer id {}".format(id))
         try:
-            select_query = "select BIN_TO_UUID(customer_id), contact, first_name, last_name, destination_id from customers where customer_id = :customer_id"
+            cust_id = id.get("customer_id")
+            self.log.info("received customer_id, {}".format(cust_id))
+            select_query = "select BIN_TO_UUID(customers.customer_id) customer_id, customers.contact, customers.first_name, customers.last_name, destinations.destination_name, customer_destinations.destination_details "\
+                 "from customers INNER JOIN customer_destinations on customers.customer_id = customer_destinations.customer_id INNER JOIN destinations on customer_destinations.destination_id = destinations.destination_id"
+            
             data = {
-                "customer_id":id.get("customer_id")
+                "customer_id":cust_id
             }
+            # self.log.info("received response, {}".format(resp))
             resp = self.connection.execute(sql_text(select_query),data).fetchone()
+            self.log.info("received response, {}".format(resp))
             details = dict(resp)
             self.log.info("The resp is {}".format(details))
             return details

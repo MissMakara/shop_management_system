@@ -63,7 +63,8 @@ class Products(Resource):
     def get_products(self, message):
         self.log.info("received request to fetch product details")
         try:
-            select_query = "select BIN_TO_UUID(product_id) product_id, product_name,BIN_TO_UUID(category_id) category_id from products order by product_id"
+            select_query = "select BIN_TO_UUID(products.product_id) product_id, products.product_name,categories.category_name as category, BIN_TO_UUID(products.category_id) as category_id ,product_colours.primary_colour as colour, product_colours.quantity as quantity "\
+                "from products INNER JOIN categories on products.category_id = categories.category_id INNER JOIN product_colours on products.product_id = product_colours.product_id"
             result = self.connection.execute(sql_text(select_query)).fetchall()
             products = [dict(row) for row in result]
             temp_products = json.dumps(products, indent=4,sort_keys=True, default=str)
@@ -78,7 +79,9 @@ class Products(Resource):
     def get_product_details(self,id):
         self.log.info("Fetching product details for product id {}".format(id))
         try:
-            select_query = "select BIN_TO_UUID(product_id) product_id, product_name,category_id from products where product_id = :product_id"
+            select_query = "select BIN_TO_UUID(products.product_id) product_id, products.product_name,categories.category_name "\
+                "from products INNER JOIN categories on products.category_id = categories.category_id where products.product_id = UUID_TO_BIN(:product_id)"
+        
             data ={
                 "product_id":id.get('product_id')
             }

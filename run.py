@@ -12,6 +12,7 @@ from views.prices import Prices
 from views.orders import Orders
 from views.destinations import Destinations
 from views.customers import Customers
+from views.users import Users
 
 
 
@@ -37,7 +38,7 @@ api.add_resource(Prices, "/prices/<string:reqparam>")
 api.add_resource(Orders,"/orders/<string:reqparam>")
 api.add_resource(Customers, "/customers/<string:reqparam>")
 api.add_resource(Destinations, "/destinations/<string:reqparam>")
-
+api.add_resource(Users, "/users/<string:reqparam>")
 
 
 if __name__ == "__main__":

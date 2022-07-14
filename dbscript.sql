@@ -225,3 +225,4 @@ pearl_earrings, NULL, UUID_TO_BIN('ac4c847b-0108-11ed-aff4-6c8814a20f80'), UUID_
 
 -- any order made will populate this table with the different products ordered
 -- then use the products price id's to populate the total amounts due
+
