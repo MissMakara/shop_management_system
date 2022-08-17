@@ -1,0 +1,51 @@
+steps
+install docker engine
+you can alternatively choose to use docker compose, thus install it at this point
+
+1. Create a requirements file
+This file holds all the different dependencies required for your code to run
+<cd to your python environment>
+$ pip freeze > requirements.txt
+
+2. Build the image
+This image is generally a snapshot of your entire code space
+
+<cd inside the project folder>
+$ docker build -t <image_name> . (ensure to include the period at the end)
+
+3. create the docker container
+This is what will run and manage the image
+
+$ docker container run -d -p <inside_port_number:outside_port_number> <image_name>
+
+4. check whether the container is running
+$ docker ps
+This command should display the details of the container_id, image, port numbers used, status, etc
+
+5. To tail logs
+$ docker logs -f <container_id>
+
+6. To stop the container from running
+$ docker stop <container_id>
+
+7. If docker refuses to run without sudo, run the following options
+Option 1
+$ sudo setfacl -m user:$USER:rw /var/run/docker.sock
+
+Option 2
+$ sudo usermod -aG docker $USER
+
+Option 3
+Create a group and add 
+$ sudo groupadd docker
+$ sudo gpasswd -a $USER docker
+$ docker run hello-world
+
+Option 4
+# Creates docker group
+$ sudo groupadd docker
+
+# Add your user to the docker group
+$ sudo usermod -aG docker $USER
+
+

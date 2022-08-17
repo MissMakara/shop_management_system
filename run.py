@@ -1,6 +1,6 @@
 import logging.handlers
 
-from cloghandler import ConcurrentRotatingFileHandler
+from concurrent_log_handler import ConcurrentRotatingFileHandler
 from flask import Flask
 from flask_restful import Api
 
