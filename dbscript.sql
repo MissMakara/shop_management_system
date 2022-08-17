@@ -178,8 +178,8 @@ VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN('b1828959-0103-11ed-aff4-6c8814a20f80')
 INSERT INTO customer_destinations (customer_destination_id, customer_id, destination_id, destination_details)
 VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN('b1828959-0103-11ed-aff4-6c8814a20f80'), UUID_TO_BIN('98d5c863-02bb-11ed-9bff-6c8814a20f80'), 'Pioneer BUilding, Fifth floor, room 502');
 
-INSERT INTO order_products (order_product_id, order_id, product_id, quantity)
-VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN('d60973be-02c0-11ed-9bff-6c8814a20f80'), UUID_TO_BIN('b6b1293e-029a-11ed-8d9e-6c8814a20f80'), 3);
+INSERT INTO order_product (order_product_id, order_id, product_id, product_quantity, price)
+VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN('d60973be-02c0-11ed-9bff-6c8814a20f80'), UUID_TO_BIN('b6b1293e-029a-11ed-8d9e-6c8814a20f80'), 3, 1200);
 
 UPDATE orders SET 
 total_amount = 4500.00,
@@ -190,9 +190,9 @@ WHERE
 order_id = UUID_TO_BIN('d60973be-02c0-11ed-9bff-6c8814a20f80');
 
 
-INSERT INTO order_product(order_product_id, order_id, product_id, product_quantity) VALUES
-(UUID_TO_BIN(UUID()),UUID_TO_BIN('4f23bf37-02a8-11ed-9bff-6c8814a20f80'), UUID_TO_BIN('b6b13247-029a-11ed-8d9e-6c8814a20f80'),1),
-(UUID_TO_BIN(UUID()),UUID_TO_BIN('4f23bf37-02a8-11ed-9bff-6c8814a20f80'), UUID_TO_BIN('87dfd888-029a-11ed-8d9e-6c8814a20f80'),2);
+INSERT INTO order_product(order_product_id, order_id, product_id, product_quantity, price) VALUES
+(UUID_TO_BIN(UUID()),UUID_TO_BIN('4f23bf37-02a8-11ed-9bff-6c8814a20f80'), UUID_TO_BIN('4d27db69-029d-11ed-8d9e-6c8814a20f80'),1, 1200.00),
+(UUID_TO_BIN(UUID()),UUID_TO_BIN('4f23bf37-02a8-11ed-9bff-6c8814a20f80'), UUID_TO_BIN('35007eaa-029d-11ed-8d9e-6c8814a20f80'),2, 400.00);
 
 
 product_name,description,price_id, category_id,primary_colour,secondary_colour, quantity
@@ -225,4 +225,31 @@ pearl_earrings, NULL, UUID_TO_BIN('ac4c847b-0108-11ed-aff4-6c8814a20f80'), UUID_
 
 -- any order made will populate this table with the different products ordered
 -- then use the products price id's to populate the total amounts due
+
+black, wide belt 10pcs
+[
+    {
+    "product_name":'wide_belt',
+    "primary_colour": 'black',
+    "secondary_colour": "black",
+    "price": "price_id",
+    "category": "category_id",
+    "product_description": "description",
+    "quantity":10
+    }
+]
+
+INSERT INTO products (product_id, product_name, category_id, description) VALUES
+(UUID_TO_BIN(UUID()), 'wide belt',"category_id",'wide belts')
+
+trx_result = self.connection2.execute(sql_text(query), dict)
+trx_id = trx_result.lastrowid
+
+INSERT INTO product_colours(product_colour_id, product_id, primary_colour, secondary_colour, quantity)
+VALUES
+(UUID_TO_BIN(UUID()), trx_id, 'BLACK', 'BLACK', 10)
+
+
+
+-- get category_id from categories based on category_name
 

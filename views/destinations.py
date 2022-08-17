@@ -83,7 +83,8 @@ class Destinations(Resource):
     def get_customer_destinations(self,message):
         self.log.info("Fetching customer destinations ....")
         try:
-            select_query = "select BIN_TO_UUID(customer_destination_id) customer_destination_id, BIN_TO_UUID(customer_id) customer_id, BIN_TO_UUID(destination_id) destination_id, destination_details from customer_destinations"
+            select_query = "select customers.first_name, customers.last_name, BIN_TO_UUID(customer_destinations.customer_destination_id) customer_destination_id, BIN_TO_UUID(customer_destinations.customer_id) customer_id, BIN_TO_UUID(customer_destinations.destination_id) destination_id, destinations.destination_name, customer_destinations.destination_details "\
+                "from customer_destinations INNER JOIN destinations on customer_destinations.destination_id=destinations.destination_id INNER JOIN customers on customer_destinations.customer_id = customers.customer_id"
             result = self.connection.execute(sql_text(select_query)).fetchall()
             destinations = [dict(row) for row in result]
             temp_dest = json.dumps(destinations, indent=4, sort_keys=True, default=str)

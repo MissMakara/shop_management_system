@@ -1,3 +1,9 @@
+#to remove any unwanted tracked material
+#git rm --cached -r <file_path>
+
 logs/*
 configs/configs_local.ini
 pearl_env/*
+__pycache__/*
+pearl_env
+*.pyc

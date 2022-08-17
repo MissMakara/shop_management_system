@@ -1,4 +1,5 @@
 import json
+import uuid
 
 from flask import current_app, request, make_response, render_template
 from flask_restful import Resource
@@ -63,8 +64,8 @@ class Products(Resource):
     def get_products(self, message):
         self.log.info("received request to fetch product details")
         try:
-            select_query = "select BIN_TO_UUID(products.product_id) product_id, products.product_name,categories.category_name as category, BIN_TO_UUID(products.category_id) as category_id ,product_colours.primary_colour as colour, product_colours.quantity as quantity "\
-                "from products INNER JOIN categories on products.category_id = categories.category_id INNER JOIN product_colours on products.product_id = product_colours.product_id"
+            select_query = "select BIN_TO_UUID(products.product_id) parent_product_id, products.product_name,categories.category_name as category, BIN_TO_UUID(products.category_id) as category_id ,BIN_TO_UUID(product_colours.product_colour_id) product_colour_id, product_colours.primary_colour as colour, product_colours.quantity as quantity, BIN_TO_UUID(products.price_id) price_id, prices.selling_price as price "\
+                "from products INNER JOIN categories on products.category_id = categories.category_id INNER JOIN product_colours on products.product_id = product_colours.product_id INNER JOIN prices on products.price_id = prices.price_id"
             result = self.connection.execute(sql_text(select_query)).fetchall()
             products = [dict(row) for row in result]
             temp_products = json.dumps(products, indent=4,sort_keys=True, default=str)
@@ -79,8 +80,8 @@ class Products(Resource):
     def get_product_details(self,id):
         self.log.info("Fetching product details for product id {}".format(id))
         try:
-            select_query = "select BIN_TO_UUID(products.product_id) product_id, products.product_name,categories.category_name "\
-                "from products INNER JOIN categories on products.category_id = categories.category_id where products.product_id = UUID_TO_BIN(:product_id)"
+            select_query = "select BIN_TO_UUID(products.product_id) parent_product_id, products.product_name,categories.category_name, BIN_TO_UUID(products.price_id) price_id, BIN_TO_UUID(products.category_id) as category_id ,BIN_TO_UUID(product_colours.product_colour_id) product_colour_id, product_colours.primary_colour as colour, product_colours.quantity as quantity, prices.selling_price as price "\
+                "from products INNER JOIN categories on products.category_id = categories.category_id INNER JOIN product_colours on products.product_id = product_colours.product_id INNER JOIN prices on products.price_id = prices.price_id where products.product_id = UUID_TO_BIN(:product_id)"
         
             data ={
                 "product_id":id.get('product_id')
@@ -100,19 +101,47 @@ class Products(Resource):
     def add_products(self,products_data):
         self.log.info("Adding product information... {}".format(products_data))
         try:
-            insert_query = "insert into products(description,price_id,product_name,quantity) values(:description,:price_id,:product_name,:quantity)"
-            for line in products_data:
+            uuid_val = str(uuid.uuid4())
+            # import pdb
+            # pdb.set_trace()
+            self.log.info("uuid value is {}".format(uuid_val))
 
-                data = {
-                    "description":line.get("description"),
-                    "price_id":line.get("price_id"),
-                    "product_name":line.get("product_name"),
-                    "quantity":line.get("quantity")
+            insert_query = "insert into products(product_id, description, price_id, product_name, category_id) "\
+                "values(UUID_TO_BIN(:uuid),:description,UUID_TO_BIN(:price_id),:product_name, UUID_TO_BIN(:category_id))"
 
-                }
-                resp = self.connection.execute(sql_text(insert_query), **data)
             
-            self.log.info("Response  is {}".format(resp))
+
+            for line in products_data:
+                data = {
+                    "uuid": uuid_val,
+                    "description":line.get("product_description"),
+                    "price_id":line.get("price"),
+                    "product_name":line.get("product_name"),
+                    "category_id":line.get("category")
+                }
+
+
+                self.log.info("Running insert")
+                resp = self.connection.execute(sql_text(insert_query), data)
+                self.log.info("Product entry response  is {}".format(resp))
+
+                trx_id = uuid_val
+                self.log.info("The last transaction id is {}".format(trx_id))
+
+                data2 = {
+                    "transaction_id":trx_id,
+                    "secondary_colour": line.get("secondary_colour"),
+                    "primary_colour": line.get("primary_colour"),
+                    "quantity": line.get("quantity")
+                }
+
+                colours_insert_query = "INSERT INTO product_colours(product_colour_id, product_id, primary_colour, secondary_colour, quantity) "\
+                "VALUES (UUID_TO_BIN(UUID()), UUID_TO_BIN(:transaction_id),:primary_colour,:secondary_colour, :quantity)"  
+
+                resp2 = self.connection.execute(sql_text(colours_insert_query), **data2)
+                self.log.info("Colour entry response  is {}".format(resp2))
+
+            self.log.info("Final Response  is {}".format(resp2))
             return "Successfully added"
         
         except Exception as e:
