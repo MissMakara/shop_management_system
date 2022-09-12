@@ -57,19 +57,51 @@ class Products(Resource):
             response = self.get_product_details(message)
             return response
         
+        # elif reqparam == "get_category_products":
+        #     response = self.get_category
+        
         else:
             response = "Unknown route {}".format(reqparam)
             return response
 
-    def get_products(self, message):
+    def get_products(self, id):
         self.log.info("received request to fetch product details")
         try:
             select_query = "select BIN_TO_UUID(products.product_id) parent_product_id, products.product_name,categories.category_name as category, BIN_TO_UUID(products.category_id) as category_id ,BIN_TO_UUID(product_colours.product_colour_id) product_colour_id, product_colours.primary_colour as colour, product_colours.quantity as quantity, BIN_TO_UUID(products.price_id) price_id, prices.selling_price as price "\
-                "from products INNER JOIN categories on products.category_id = categories.category_id INNER JOIN product_colours on products.product_id = product_colours.product_id INNER JOIN prices on products.price_id = prices.price_id"
-            result = self.connection.execute(sql_text(select_query)).fetchall()
-            products = [dict(row) for row in result]
+                "from products INNER JOIN categories on products.category_id = categories.category_id INNER JOIN product_colours on products.product_id = product_colours.product_id INNER JOIN prices on products.price_id = prices.price_id ORDER BY categories.category_name ASC"
+            
+            select_query_desc = "select BIN_TO_UUID(products.product_id) parent_product_id, products.product_name,categories.category_name as category, BIN_TO_UUID(products.category_id) as category_id ,BIN_TO_UUID(product_colours.product_colour_id) product_colour_id, product_colours.primary_colour as colour, product_colours.quantity as quantity, BIN_TO_UUID(products.price_id) price_id, prices.selling_price as price "\
+                "from products INNER JOIN categories on products.category_id = categories.category_id INNER JOIN product_colours on products.product_id = product_colours.product_id INNER JOIN prices on products.price_id = prices.price_id ORDER BY categories.category_name DESC"
+            
+
+            data = {
+                "limit":id.get('limit'),
+                "page":id.get('page'),
+                "sort":id.get('sort')
+            }
+            page = int(data.get('page'))
+            limit = int(data.get('limit'))
+            sorting = data.get('sort')
+            start = (page-1)*limit
+            stop = limit * page
+
+            # import pdb
+            # pdb.set_trace()
+            
+            if sorting == 'ASC':
+                result = self.connection.execute(sql_text(select_query)).fetchall()
+            if sorting == 'DESC':
+                result = self.connection.execute(sql_text(select_query_desc)).fetchall()
+
+            initial_products = [dict(row) for row in result]
+            # import pdb
+            # pdb.set_trace()
+
+            products = initial_products[start:stop]
+
             temp_products = json.dumps(products, indent=4,sort_keys=True, default=str)
             products = json.loads(temp_products)
+
             self.log.info("Products are: {}".format(products))
             return products
         

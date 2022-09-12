@@ -56,7 +56,7 @@ class Users(Resource):
             return response
         
         elif reqparam == "get_user_details":
-            response = self.get_destination_details(message)
+            response = self.get_user_details(message)
             return response
 
         else:
@@ -66,16 +66,57 @@ class Users(Resource):
     def get_users(self, message):
         self.log.info("Fetching users ....")
         try:
-            select_query = "select BIN_TO_UUID(user_id) user_id, user_name, first_name, last_name, user_role from users"
-            result = self.connection.execute(sql_text(select_query)).fetchall()
+            select_query = "select BIN_TO_UUID(user_id) as user_id, user_name, first_name, last_name, user_role from users ORDER BY user_name ASC"
+            
+            select_query_desc = "select BIN_TO_UUID(user_id) as user_id, user_name, first_name, last_name, user_role from users order by user_name DESC"
+            
+            limit = int(message['limit'])
+            page = int(message['page'])
+            sorting = message.get('sort')
+            start = (page-1)*limit
+            stop = limit * page
+            
+            if sorting == 'ASC':
+                result = self.connection.execute(sql_text(select_query)).fetchall()
+            if sorting == 'DESC':
+                result = self.connection.execute(sql_text(select_query_desc)).fetchall()
+            
             user = [dict(row) for row in result]
+            users = user[start:stop]
             temp_user = json.dumps(user, indent=4, sort_keys=True, default=str)
             users = json.loads(temp_user)
             self.log.info("users are: {}".format(users))
+
             return users
 
         except Exception as e:
             self.log.error("Could not fetch users due to error: {}".format(e))
+
+    def get_user_details(self, message):
+        self.log.info("Fetching user_id ".format(message))
+  
+        try:
+            select_query = "select BIN_TO_UUID(user_id) as user_id, user_name, first_name,last_name, user_role "\
+            "from users where user_id = UUID_TO_BIN(:user_id)"
+        
+            # import pdb
+            # pdb.set_trace()
+         
+            data ={
+                "user_id" : message.get('id')
+            }
+            
+            result = self.connection.execute(sql_text(select_query), data).fetchall()
+            user = [dict(row) for row in result]
+            temp_user_dets = json.dumps(user, indent=4, sort_keys = True, default=str)
+            user_details  = json.loads(temp_user_dets)
+            self.log.info("user details are {}".format(user_details))
+            return user_details
+            
+
+        except Exception as e:
+            self.log.error("Could not fetch users due to error:{}".format(e))
+
 
 
     def add_user(self, user_data):

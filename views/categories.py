@@ -82,16 +82,22 @@ class Category(Resource):
    
     def get_category(self, message):
         try:
+            
             category_id = message["id"]
             #learn on various ways to fetch data from dicts
 
             self.log.info("received request to fetch category:{}".format(category_id))
-            select_query = "select category_id, category_name from categories where category_id = :category_id"
+            select_query = "select BIN_TO_UUID(categories.category_id), categories.category_name, products.product_name as products from "\
+                "products INNER JOIN categories ON products.category_id = categories.category_id where products.category_id = UUID_TO_BIN(:category_id)"
+            
             data = {
                 "category_id": category_id
             }
-            resp = self.connection.execute(sql_text(select_query),data).fetchone()
-            category = dict(resp)
+            resp = self.connection.execute(sql_text(select_query),data).fetchall()
+            cat_details = [dict(row) for row in resp]
+            category_temp = json.dumps(cat_details, indent=4, sort_keys=True, default=str)
+            category = json.loads(category_temp) 
+            
             self.log.info("Received category: {}".format(category))
             return category
     
